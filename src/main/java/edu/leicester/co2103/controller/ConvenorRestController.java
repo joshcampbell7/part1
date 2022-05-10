@@ -1,11 +1,15 @@
 package edu.leicester.co2103.controller;
 
 import edu.leicester.co2103.domain.Convenor;
+import edu.leicester.co2103.domain.ErrorInfo;
+import edu.leicester.co2103.domain.Module;
 import edu.leicester.co2103.repo.ConvenorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 
@@ -29,38 +33,70 @@ public class ConvenorRestController {
 
     }
 
+    @PostMapping("/convenors")
+    public ResponseEntity<?> endpoint2(@RequestBody Convenor convenor, UriComponentsBuilder ucBuilder) {
 
-//    @GetMapping("/convenors/{id}")
-//    public ResponseEntity<?> endpoint3(@PathVariable("id")int id){
-//        Convenor convenor =convenorRepository.findById(id).orElse(null);
-//        if(convenor ==null){
-//            return new ResponseEntity(new ErrorInfo("Hotel with id "+id +" not found"),HttpStatus.NOT_FOUND);
-//        }
-//        return new ResponseEntity<Convenor>(convenor,HttpStatus.OK);
-//
-//
-//    }
-//
-//    @PostMapping("/api/convenors/{id}")
-//    public String addConvenor(){
-//
-//    }
-//
-//    @PutMapping("/api/convenors/{id}")
-//    public String updateConvenorByID(){
-//
-//    }
-//
-//    @DeleteMapping("/api/convenors/{id}")
-//    public String deleteConvenorByID(){
-//
-//    }
-//
-//    @GetMapping("/api/convenors/{id}/modules")
-//    public String retrieveModuleByConvenor(){
-//
-//    }
+        if (convenorRepository.existsById(convenor.getId())) {
+            return new ResponseEntity<ErrorInfo>(new ErrorInfo("A convenor named " + convenor.getName() + " already exists."),
+                    HttpStatus.CONFLICT);
+        }
+        convenorRepository.save(convenor);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(ucBuilder.path("/api/convenors/{id}").buildAndExpand(convenor.getId()).toUri());
+        return new ResponseEntity<String>(headers, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/convenors/{id}")
+    public ResponseEntity<?> endpoint3(@PathVariable("id")int id){
+        Convenor convenor =convenorRepository.findById((long) id).orElse(null);
+        if(convenor ==null){
+            return new ResponseEntity(new ErrorInfo("convenor with id "+id +" not found"),HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<Convenor>(convenor,HttpStatus.OK);
+
+    }
+
+    @PutMapping("/convenors/{id}")
+    public ResponseEntity<?> endpoint4(@PathVariable("id") int id, @RequestBody Convenor newConvenor) {
+
+        if (convenorRepository.findById((long) id).isPresent()) {
+            Convenor currentConvenor = convenorRepository.findById((long) id).get();
+            currentConvenor.setName(newConvenor.getName());
+            currentConvenor.setPosition(newConvenor.getPosition());
+            currentConvenor.setModules(newConvenor.getModules());
 
 
+            currentConvenor.getModules().clear();
+            currentConvenor.getModules().addAll(newConvenor.getModules());
 
+            convenorRepository.save(currentConvenor);
+            return new ResponseEntity<Convenor>(currentConvenor, HttpStatus.OK);
+        } else
+            return new ResponseEntity<ErrorInfo>(new ErrorInfo("convenor with id " + id + " not found."),
+                    HttpStatus.NOT_FOUND);
+
+    }
+
+    @RequestMapping(value = "/convenors/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity<?> endpoint5(@PathVariable("id") int id) {
+        if (convenorRepository.findById((long) id).isPresent()) {
+            convenorRepository.deleteById((long) id);
+            return ResponseEntity.ok(null);
+        } else
+            return new ResponseEntity<ErrorInfo>(new ErrorInfo("convenor with id " + id + " not found."),
+                    HttpStatus.NOT_FOUND);
+
+    }
+
+    @GetMapping("/convenors/{id}/modules")
+    public ResponseEntity<?> endpoint6(@PathVariable("id")int id) {
+        Convenor convenor = convenorRepository.findById((long) id).orElse(null);
+
+        if (convenor == null) {
+            return new ResponseEntity(new ErrorInfo("convenor with id " + id + " not found"), HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<Convenor>((Convenor) convenor.getModules(), HttpStatus.OK);
+
+    }
 }
