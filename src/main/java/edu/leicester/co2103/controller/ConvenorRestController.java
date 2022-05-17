@@ -4,6 +4,7 @@ import edu.leicester.co2103.domain.Convenor;
 import edu.leicester.co2103.domain.ErrorInfo;
 import edu.leicester.co2103.domain.Module;
 import edu.leicester.co2103.repo.ConvenorRepository;
+import edu.leicester.co2103.repo.ModuleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,12 @@ public class ConvenorRestController {
 
     @Autowired
     ConvenorRepository convenorRepository;
+
+    @Autowired
+    ModuleRepository moduleRepository;
+
+
+
 
     @GetMapping("/convenors")
     public ResponseEntity<List<Convenor>> endpoint1() {
@@ -48,12 +55,12 @@ public class ConvenorRestController {
     }
 
     @GetMapping("/convenors/{id}")
-    public ResponseEntity<?> endpoint3(@PathVariable("id")int id){
-        Convenor convenor =convenorRepository.findById((long) id).orElse(null);
-        if(convenor ==null){
-            return new ResponseEntity(new ErrorInfo("convenor with id "+id +" not found"),HttpStatus.NOT_FOUND);
+    public ResponseEntity<?> endpoint3(@PathVariable("id") int id) {
+        Convenor convenor = convenorRepository.findById((long) id).orElse(null);
+        if (convenor == null) {
+            return new ResponseEntity(new ErrorInfo("convenor with id " + id + " not found"), HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<Convenor>(convenor,HttpStatus.OK);
+        return new ResponseEntity<Convenor>(convenor, HttpStatus.OK);
 
     }
 
@@ -78,25 +85,19 @@ public class ConvenorRestController {
 
     }
 
-    @RequestMapping(value = "/convenors/{id}", method = RequestMethod.DELETE)
-    public ResponseEntity<?> endpoint5(@PathVariable("id") int id) {
-        if (convenorRepository.findById((long) id).isPresent()) {
-            convenorRepository.deleteById((long) id);
-            return ResponseEntity.ok(null);
-        } else
-            return new ResponseEntity<ErrorInfo>(new ErrorInfo("convenor with id " + id + " not found."),
-                    HttpStatus.NOT_FOUND);
-
+    @DeleteMapping("/convenors/{id}")
+    public ResponseEntity<?> endpoint5(@PathVariable("id") long id) {
+        convenorRepository.deleteById(id);
+        return ResponseEntity.ok(null);
     }
 
     @GetMapping("/convenors/{id}/modules")
-    public ResponseEntity<?> endpoint6(@PathVariable("id")int id) {
-        Convenor convenor = convenorRepository.findById((long) id).orElse(null);
-
+    public ResponseEntity<?> endpoint6(@PathVariable("id") long id) {
+        Convenor convenor = (Convenor) convenorRepository.findById(id).orElse(null);
         if (convenor == null) {
             return new ResponseEntity(new ErrorInfo("convenor with id " + id + " not found"), HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<Convenor>((Convenor) convenor.getModules(), HttpStatus.OK);
+        return new ResponseEntity<>(convenor.getModules(), HttpStatus.OK);
 
     }
 }
